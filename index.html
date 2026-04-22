@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MarkFlow - Advanced Markdown Editor</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        surface: {
+                            light: '#ffffff',
+                            dark: '#0f172a',
+                            secondary: {
+                                light: '#f8fafc',
+                                dark: '#1e293b',
+                            },
+                            tertiary: {
+                                light: '#f1f5f9',
+                                dark: '#334155',
+                            }
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'slide-down': 'slideDown 0.3s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(10px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        slideDown: {
+                            '0%': { transform: 'translateY(-10px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css" id="hljs-light">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" id="hljs-dark" disabled>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-surface-light dark:bg-surface-dark text-slate-800 dark:text-slate-100 font-sans h-screen flex flex-col overflow-hidden transition-colors duration-300">
+    <div id="loading-overlay" class="fixed inset-0 bg-white dark:bg-surface-dark flex items-center justify-center z-50 transition-all duration-300">
+        <div class="text-center">
+            <div class="w-12 h-12 mx-auto mb-4 border-4 border-primary-100 dark:border-slate-700 border-t-primary-500 rounded-full animate-spin"></div>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Loading MarkFlow...</p>
+        </div>
+    </div>
+
+    <nav class="h-14 bg-white dark:bg-surface-secondary-dark border-b border-slate-200 dark:border-slate-700 flex items-center px-4 gap-3 flex-shrink-0 shadow-sm">
+        <a href="#" class="flex items-center gap-2 no-underline">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
+                <i class="bi bi-markdown-fill text-white text-lg"></i>
+            </div>
+            <span class="text-xl font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent hidden sm:block">MarkFlow</span>
+        </a>
+        
+        <div class="flex-1"></div>
+        
+        <div id="save-indicator" class="hidden md:flex items-center gap-1.5 text-xs text-slate-500 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700/50">
+            <i class="bi bi-check-circle-fill text-emerald-500"></i>
+            <span>Saved</span>
+        </div>
+        
+        <div class="flex items-center gap-1">
+            <button onclick="exportData('md')" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Export MD">
+                <i class="bi bi-file-earmark-markdown text-lg"></i>
+            </button>
+            <button onclick="exportData('html')" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Export HTML">
+                <i class="bi bi-file-earmark-code text-lg"></i>
+            </button>
+        </div>
+        
+        <div class="relative dropdown">
+            <button data-dropdown class="p-2 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                <i class="bi bi-gear-wide-connected text-lg"></i>
+            </button>
+            <div class="dropdown-menu absolute right-0 top-full mt-2 w-56 bg-white dark:bg-surface-secondary-dark rounded-xl shadow-lg border border-slate-200 dark:border-slate-600 hidden z-40 animate-slide-down">
+                <div class="p-2">
+                    <div class="text-xs font-medium text-slate400 uppercase tracking-wider px-3 py-2">Appearance</div>
+                    <button onclick="setTheme('light')" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3 transition">
+                        <i class="bi bi-sun text-primary-500"></i>Light Mode
+                    </button>
+                    <button onclick="setTheme('dark')" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3 transition">
+                        <i class="bi bi-moon text-primary-500"></i>Dark Mode
+                    </button>
+                    <div class="border-t border-slate-200 dark:border-slate-600 my-2"></div>
+                    <div class="text-xs font-medium text-slate-400 uppercase tracking-wider px-3 py-2">Accent Color</div>
+                    <button onclick="setColorTheme('blue')" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3 transition">
+                        <span class="w-4 h-4 rounded-full bg-primary-500 ring-2 ring-primary-100 dark:ring-slate-600"></span>Ocean Blue
+                    </button>
+                    <button onclick="setColorTheme('green')" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3 transition">
+                        <span class="w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-emerald-100 dark:ring-slate-600"></span>Forest Green
+                    </button>
+                    <button onclick="setColorTheme('purple')" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3 transition">
+                        <span class="w-4 h-4 rounded-full bg-violet-500 ring-2 ring-violet-100 dark:ring-slate-600"></span>Lavender
+                    </button>
+                    <div class="border-t border-slate-200 dark:border-slate-600 my-2"></div>
+                    <button onclick="copyToClipboard()" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3 transition">
+                        <i class="bi bi-clipboard text-primary-500"></i>Copy HTML
+                    </button>
+                    <button onclick="toggleFullscreen()" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3 transition">
+                        <i class="bi bi-arrows-fullscreen text-primary-500"></i>Fullscreen
+                    </button>
+                    <button onclick="confirmClear()" class="w-full text-left px-3 py-2.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 flex items-center gap-3 transition">
+                        <i class="bi bi-trash"></i>Clear Editor
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <button onclick="toggleTheme()" class="p-2 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+            <i class="bi bi-sun text-lg dark:hidden"></i>
+            <i class="bi bi-moon-stars text-lg hidden dark:block"></i>
+        </button>
+    </nav>
+
+    <div class="bg-white dark:bg-surface-secondary-dark border-b border-slate-200 dark:border-slate-700 px-2 py-2 flex items-center gap-1 flex-wrap overflow-x-auto">
+        <div class="flex gap-0.5">
+            <button onclick="formatText('bold')" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 transition" title="Bold (Ctrl+B)">
+                <i class="bi bi-type-bold"></i>
+            </button>
+            <button onclick="formatText('italic')" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 transition" title="Italic (Ctrl+I)">
+                <i class="bi bi-type-italic"></i>
+            </button>
+            <button onclick="formatText('strike')" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 transition" title="Strikethrough">
+                <i class="bi bi-type-strikethrough"></i>
+            </button>
+        </div>
+        
+        <div class="w-px h-6 bg-slate-200 dark:bg-slate-600"></div>
+        
+        <div class="flex gap-0.5">
+            <button onclick="formatText('h1')" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 transition font-semibold" title="Heading 1">H1</button>
+            <button onclick="formatText('h2')" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 transition font-semibold" title="Heading 2">H2</button>
+            <button onclick="formatText('h3')" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 transition font-semibold" title="Heading 3">H3</button>
+        </div>
+        
+        <div class="w-px h-6 bg-slate-200 dark:bg-slate-600"></div>
+        
+        <div class="flex gap-0.5">
+            <button onclick="formatText('quote')" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 transition" title="Quote">
+                <i class="bi bi-quote"></i>
+            </button>
+            <button onclick="formatText('code')" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 transition" title="Inline Code">
+                <i class="bi bi-code-slash"></i>
+            </button>
+            <button onclick="formatText('codeblock')" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 transition" title="Code Block">
+                <i class="bi bi-code-square"></i>
+            </button>
+        </div>
+        
+        <div class="w-px h-6 bg-slate-200 dark:bg-slate-600"></div>
+        
+        <div class="flex gap-0.5">
+            <button onclick="formatText('ul')" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 transition" title="Bullet List">
+                <i class="bi bi-list-ul"></i>
+            </button>
+            <button onclick="formatText('ol')" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 transition" title="Numbered List">
+                <i class="bi bi-list-ol"></i>
+            </button>
+            <button onclick="formatText('task')" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 transition" title="Task List">
+                <i class="bi bi-check2-square"></i>
+            </button>
+        </div>
+        
+        <div class="w-px h-6 bg-slate-200 dark:bg-slate-600"></div>
+        
+        <div class="flex gap-0.5">
+            <button onclick="formatText('link')" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 transition" title="Link (Ctrl+K)">
+                <i class="bi bi-link-45deg"></i>
+            </button>
+            <button onclick="formatText('image')" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 transition" title="Image">
+                <i class="bi bi-image"></i>
+            </button>
+            <button onclick="formatText('hr')" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 transition" title="Horizontal Rule">
+                <i class="bi bi-hr"></i>
+            </button>
+        </div>
+        
+        <div class="w-px h-6 bg-slate-200 dark:bg-slate-600"></div>
+        
+        <div class="flex gap-0.5">
+            <button onclick="undo()" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 transition" title="Undo (Ctrl+Z)">
+                <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+            <button onclick="redo()" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 transition" title="Redo (Ctrl+Y)">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        </div>
+        
+        <div class="flex-1"></div>
+        
+        <div class="flex gap-0.5 md:hidden bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+            <button onclick="showPanel('editor')" id="tab-editor" class="px-3 py-1.5 rounded-md text-sm font-medium bg-white dark:bg-surface-secondary-dark text-primary-600 shadow-sm">
+                <i class="bi bi-pencil me-1"></i>Editor
+            </button>
+            <button onclick="showPanel('preview')" id="tab-preview" class="px-3 py-1.5 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300">
+                <i class="bi bi-eye me-1"></i>Preview
+            </button>
+        </div>
+    </div>
+
+    <main class="flex-1 flex overflow-hidden relative">
+        <div id="editor-panel" class="flex-1 flex flex-col min-w-0 border-r border-slate-200 dark:border-slate-700 bg-surface-light dark:bg-surface-dark">
+            <div class="px-4 py-2 bg-slate-50 dark:bg-surface-tertiary-dark text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 dark:border-slate-700">
+                <i class="bi bi-pencil-square"></i>
+                <span>Editor</span>
+                <span class="text-slate-300 dark:text-slate-600">|</span>
+                <span class="text-slate-400 normal-case" id="file-status">Empty</span>
+            </div>
+            <textarea 
+                id="editor" 
+                class="flex-1 p-6 resize-none outline-none bg-transparent font-mono text-sm leading-relaxed placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                placeholder="# Welcome to MarkFlow ✨
+
+Start writing your markdown here...
+
+## Features:
+• Live preview as you type
+• Syntax highlighting  
+• Auto-save to local storage
+• Export to .md or .html
+• Dark/Light mode
+
+**Try it out!**
+```javascript
+const greeting = 'Hello, MarkFlow!';
+console.log(greeting);
+```"
+                spellcheck="false"
+            ></textarea>
+        </div>
+        
+        <div id="resize-handle" class="w-1 bg-slate-200 dark:bg-slate-700 cursor-col-resize hover:bg-primary-500 transition-colors flex items-center justify-center group hidden md:block">
+            <div class="w-0.5 h-8 bg-slate-300 dark:bg-slate-600 group-hover:bg-white rounded-full transition-colors"></div>
+        </div>
+        
+        <div id="preview-panel" class="flex-1 flex flex-col min-w-0 bg-white dark:bg-surface-secondary-dark">
+            <div class="px-4 py-2 bg-slate-50 dark:bg-surface-tertiary-dark text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 dark:border-slate-700">
+                <i class="bi bi-eye"></i>
+                <span>Preview</span>
+            </div>
+            <div id="preview" class="flex-1 p-6 overflow-auto prose prose-slate dark:prose-invert max-w-none">
+                <div class="flex flex-col items-center justify-center h-full text-slate-400">
+                    <div class="w-16 h-16 mb-4 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                        <i class="bi bi-file-earmark-text text-3xl opacity-40"></i>
+                    </div>
+                    <p class="text-sm">Start typing to see preview</p>
+                    <p class="text-xs mt-1 opacity-60">Markdown supported</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="h-10 bg-white dark:bg-surface-secondary-dark border-t border-slate-200 dark:border-slate-700 px-4 flex items-center text-xs text-slate-500 gap-4">
+        <div class="flex items-center gap-1.5">
+            <i class="bi bi-cursor-text"></i>
+            <span id="word-count">0</span> words
+        </div>
+        <div class="w-px h-4 bg-slate-300 dark:bg-slate-600"></div>
+        <div class="flex items-center gap-1.5">
+            <i class="bi bi-type"></i>
+            <span id="char-count">0</span> chars
+        </div>
+        <div class="w-px h-4 bg-slate-300 dark:bg-slate-600"></div>
+        <div class="flex items-center gap-1.5">
+            <i class="bi bi-clock"></i>
+            <span id="read-time">0</span> min read
+        </div>
+        <div class="flex-1"></div>
+        <div id="current-theme" class="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 rounded-full text-xs font-medium">
+            Ocean Blue
+        </div>
+        <div class="hidden md:flex items-center gap-1.5 text-slate-400">
+            <i class="bi bi-github"></i>
+        </div>
+    </footer>
+
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2"></div>
+
+    <dialog id="confirm-dialog" class="p-0 rounded-2xl shadow-2xl border-0 backdrop:bg-black/60 backdrop:backdrop-blur-sm">
+        <div class="p-6 w-80">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                    <i class="bi bi-exclamation-triangle text-red-500 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold">Confirm</h3>
+            </div>
+            <p id="confirm-message" class="text-slate-600 dark:text-slate-300 mb-5">Are you sure you want to clear the editor?</p>
+            <div class="flex gap-2 justify-end">
+                <button onclick="closeConfirm()" class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition">Cancel</button>
+                <button onclick="confirmAction()" class="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition">Clear</button>
+            </div>
+        </div>
+    </dialog>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
